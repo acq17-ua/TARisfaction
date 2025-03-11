@@ -1,5 +1,0 @@
-int32 orden
----
-int32[] secuencia_final
----
-float64[] secuencia_actual

@@ -1,8 +1,0 @@
-prefix=/workspace/catkin_ws/devel
-
-Name: mi_accion
-Description: Description of mi_accion
-Version: 0.0.0
-Cflags: -I/workspace/catkin_ws/devel/include
-Libs: -L${prefix}/lib 
-Requires: actionlib_msgs rospy std_msgs
