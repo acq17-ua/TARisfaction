@@ -1,0 +1,5 @@
+int32 orden
+---
+int32[] secuencia_final
+---
+int32[] secuencia_actual

@@ -1,0 +1,2 @@
+set(mi_accion_MESSAGE_FILES "msg/FibonacciAction.msg;msg/FibonacciActionGoal.msg;msg/FibonacciActionResult.msg;msg/FibonacciActionFeedback.msg;msg/FibonacciGoal.msg;msg/FibonacciResult.msg;msg/FibonacciFeedback.msg;msg/ejFibonacciAction.msg;msg/ejFibonacciActionGoal.msg;msg/ejFibonacciActionResult.msg;msg/ejFibonacciActionFeedback.msg;msg/ejFibonacciGoal.msg;msg/ejFibonacciResult.msg;msg/ejFibonacciFeedback.msg")
+set(mi_accion_SERVICE_FILES "")

@@ -1,0 +1,6 @@
+<launch>
+    <!-- Nodo de envio -->
+    <node name="envia_nodo" pkg="primer_paquete" type="nodo_envia.py" output="screen"/>
+    <!-- Nodo de recibir -->
+    <node name="recibe_nodo" pkg="primer_paquete" type="nodo_recibe.py" output="screen"/>
+</launch>
