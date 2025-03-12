@@ -53,7 +53,7 @@ El resultado debe ser el siguiente:
 > Nota: El Turtlebot 2 es un modelo muy antiguo, de la versión ROS Kinetic. Por ello, su paquetería se encuentra programada en Python 2 y es posible que al teleoperarlo o ejecutar nodos propios del paquete del robot, sea necesario modificar las cabeceras de los archivos `.py` del siguiente modo:
 
 ```python
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ```
 Cambiar por:
 ```python
@@ -190,11 +190,11 @@ Como puedes observar, ahora con el teclado podemos teleoperar al robot y moverlo
 
 ## Parte 2: Resolución de un Laberinto
 
-En esta segunda parte de la práctica, se utilizará el Turtlebot 2 y Turtlebot 3 equipados con un sensor LiDAR para resolver un laberinto de manera autónoma. Para ello, deberán crear un nuevo paquete de ROS llamado `maze_pkg`, asegurándose de incluir todas las dependencias necesarias. Este paquete contendrá los nodos y scripts requeridos para la navegación del robot dentro del laberinto, empleando técnicas de percepción y control basadas en los datos obtenidos del LiDAR. Para comenzar, lanza en un mundo vacío por un lado el Turtlebot 2 y por otro el Turtlebot 3 y contesta a las siguientes preguntas para cada robot:
+En esta segunda parte de la práctica, se utilizará el Turtlebot 2 y Turtlebot 3 equipados con un sensor LiDAR para resolver un laberinto de manera autónoma. Para ello, deberéis crear un nuevo paquete de ROS llamado `maze_pkg`, asegurándoos de incluir todas las dependencias necesarias. Este paquete contendrá los nodos y scripts requeridos para la navegación del robot dentro del laberinto, empleando técnicas de percepción y control basadas en los datos obtenidos del LiDAR. Para comenzar, lanza en un mundo vacío por un lado el Turtlebot 2 y por otro el Turtlebot 3 y contesta a las siguientes preguntas para cada robot:
 
-> Pregunta 1: ¿Cúal es el topic asociado al LiDAR? ¿Cuál es la tipología de los mensajes?
+> Pregunta 1: ¿Cuál es el topic asociado al LiDAR? ¿Cuál es la tipología de los mensajes?
 >
-> Pregunta 2: ¿Cuál es el rango de **distancias** que puede medir LiDAR? ¿Cuál es el rango **angular de escaneo** que tiene el LiDAR? ¿Cual es el **origen de referencia** del LiDAR?
+> Pregunta 2: ¿Cuál es el rango de **distancias** que puede medir el LiDAR? ¿Cuál es el rango **angular de escaneo** que tiene el LiDAR? ¿Cuál es el **origen de referencia** del LiDAR?
 
 ### Ejercicios:
 1. El objetivo es emplear el Turtlebot 2 y desarrollar un nodo que haga que el robot logre "escapar" del laberinto, el nodo debe llamarse `res_maze.py` dentro del paquete `maze_pkg`. Para poder cargar el entorno de simulación con el mapa con el laberinto, debes añadir los directorios `models`, `worlds` y `launch`, que se encuentran en la carpeta `Parte_2`, en el directorio raíz del paquete. A continuación, para poder lanzar el robot debes ejecutar el siguiente comando una vez hayas compilado el paquete:
@@ -202,7 +202,7 @@ En esta segunda parte de la práctica, se utilizará el Turtlebot 2 y Turtlebot 
     roslaunch maze_pkg maze_tb2.launch world_file:=/workspace/catkin_ws/src/maze_pkg/worlds/maze_1.world
     ```
 
-2. Como puedes observar en la carpeta `worlds` existe otro mapa con otro modelo de laberinto llamado `maze_2.world`. Ejecuta este nuevo entorno en `Gazebo` y lanza de nuevo el algoritmo de resolución que hiciste en el Ejercicio 1. Añadido a esto, contesta a las siguientes preguntas:
+2. Como puedes observar, en la carpeta `worlds` existe otro mapa con otro modelo de laberinto llamado `maze_2.world`. Ejecuta este nuevo entorno en `Gazebo` y lanza de nuevo el algoritmo de resolución que hiciste en el Ejercicio 1. Además, contesta a las siguientes preguntas:
 
     > Pregunta 3: ¿Qué problematica observas en este tipo de escenarios? 
     >
@@ -210,8 +210,8 @@ En esta segunda parte de la práctica, se utilizará el Turtlebot 2 y Turtlebot 
 
 3. Repite los Ejercicios anteriores empleando el Turtlebot 3, respondiendo también a las preguntas asociadas a los Ejercicios.
 
-4. **EJERCICIO OPCIONAL (+1.5 punto):** El robot real Turtlebot 2 tiene un rango de escaneo angular y de distancias del LiDAR diferente al del robot simulado. Investiga como modificar los parámetros del robot simulado en ROS para que tenga el mismo rango que el robot real. Prueba a resolver los Ejercicios 1 y 2 de nuevo empleando este nuevo rango del LiDAR. Asimismo, responde a la siguiente pregunta:
+4. **EJERCICIO OPCIONAL:** El robot real Turtlebot 2 tiene un rango de escaneo angular y de distancias del LiDAR diferente al del robot simulado. Investiga cómo modificar los parámetros del robot simulado en ROS para que tenga el mismo rango que el robot real. Prueba a resolver los Ejercicios 1 y 2 empleando este nuevo rango del LiDAR. Asimismo, responde a la siguiente pregunta:
 
     > Pregunta 5: ¿Ofrece mejor rendimiento este rango del LiDAR? ¿Qué diferencias notas respecto al rango del LiDAR simulado?
 
-6. **EJERCICIO OPCIONAL (+1.5 puntos):** En este ejercicio se pide que generes un nuevo laberinto a tu gusto y que pruebes con los dos Turtlebot a resolverlo. Para ello, tendrás que investigar sobre cómo generar modelos y mapas en `Gazebo` para luego cargarlos. Como guía para el laberito puedes usar el siguiente generador [Maze Generator](https://mazegenerator.net/). Obviamente, cuanto más complejo sea el laberinto mejor valoración se tendrá y sobretodo si los robots logran resolverlo.
+6. **EJERCICIO OPCIONAL:** En este ejercicio se pide que generes un nuevo laberinto a tu gusto y que pruebes con los dos Turtlebot a resolverlo. Para ello, tendrás que investigar sobre cómo generar modelos y mapas en `Gazebo` para luego cargarlos. Como guía para el laberito puedes usar el siguiente generador [Maze Generator](https://mazegenerator.net/). Obviamente, cuanto más complejo sea el laberinto mejor valoración se tendrá y, sobre todo, si los robots logran resolverlo.

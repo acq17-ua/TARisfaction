@@ -1,0 +1,8 @@
+prefix=/workspace/catkin_ws/devel
+
+Name: ecl_build
+Description: Description of ecl_build
+Version: 0.61.8
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
