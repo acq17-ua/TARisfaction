@@ -8,7 +8,6 @@ project(p3_pkg)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
   geometry_msgs
   rospy
   sensor_msgs
@@ -69,11 +68,12 @@ find_package(catkin REQUIRED COMPONENTS
 #   Action2.action
 # )
 
+# PARA DEFINIR TUS PROPIOS MENSAJE:
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   geometry_msgs   sensor_msgs   std_msgs
- )
+# generate_messages(
+#   DEPENDENCIES
+#   geometry_msgs   sensor_msgs   std_msgs
+#)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -107,9 +107,9 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES p3_pkg
-#  CATKIN_DEPENDS geometry_msgs rospy sensor_msgs std_msgs
+  CATKIN_DEPENDS geometry_msgs rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
-   DEPENDS message_runtime
+  DEPENDS message_runtime
 )
 
 ###########
