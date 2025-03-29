@@ -8,6 +8,9 @@ from math import sin, cos, pi, sqrt
 
 def process_new_position(data, args):
 
+    if( args["is_rotating"] ):
+        return
+
     # normal update
     if( args["xo"] is not None ):
         
@@ -15,15 +18,56 @@ def process_new_position(data, args):
         args["y"] = data.position[1]
     
 
-        args["done"] = sqrt( abs(args["x"]-args["xo"]) + abs(args["y"]-args["yo"]) ) >= args["distance"]
+        #args["done"] = sqrt( abs(args["x"]-args["xo"])**2 + abs(args["y"]-args["yo"])**2 ) >= args["distance"]
+        
+        distance = sqrt( abs(args["x"]-args["xo"])**2 + abs(args["y"]-args["yo"])**2 )
+        args["done"] = distance >= args["distance"]
+
+        if(args["done"]):
+            print(f"it was me: {args['x']},{args['y']} -- ({args['done']})")
+            print(f"--it was me: {args['xo']},{args['yo']} -- ({args['done']})")
+            print(f"--distance: {distance}")
+
         #print(f"new pos recorded: {args['x']},{args['y']} -- ({args['done']})")
 
-    # first position recorded
+    # first position recorded (calculate end coordinates)
     else:
+
+        #args["x"] = sin(args["angle"]*pi/180) 
+        #args["y"] = cos(args["angle"]*pi/180)
+            
         args["xo"] = data.position[0]
         args["yo"] = data.position[1]
-        
-        #print(f"first pos recorded: {args['xo']},{args['yo']}")
+
+        print(f"first pos recorded: {args['xo']},{args['yo']}")
+
+def rotate(pub, degrees, callback_args):
+
+    callback_args["is_rotating"] = True
+
+    angular_speed = .5 # rad/s
+    wait_time = (degrees*pi/180) / angular_speed
+
+    print(f"wait time: {wait_time}")
+
+    rotation = Twist()
+    rotation.angular.z = angular_speed
+    
+    start = rospy.get_time()
+    
+
+    while (start + wait_time) > rospy.get_time():
+        pub.publish(rotation)
+   
+    print(f"start: {start} wait_time: {wait_time} now: {rospy.get_time()}")
+    # finish rotation
+    rotation.angular.z = 0
+    pub.publish(rotation)
+
+    # wait for robot to stabilize
+    rospy.sleep(.3)
+
+    callback_args["is_rotating"] = False
 
 def prepare_ros(callback_args):
 
@@ -36,7 +80,7 @@ def prepare_ros(callback_args):
 
 def move_triangle():
     
-    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":3 }
+    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":3, "is_rotating":False }
     pub, sub, node, rate = prepare_ros(args)
     msg = Twist()
 
@@ -49,60 +93,47 @@ def move_triangle():
 
         # movement is done
         if args["done"]:
-            print("First side done")
-            args["done"] = False
-            args["xo"], args["yo"] = args["x"], args["y"]
-
             break
 
-        
-
-        # keep moving straight
-        #msg.linear.x = cos(120*pi/180)
-        #msg.linear.y = sin(120*pi/180)
-        #msg.angular.z = 120*pi/180
         msg.linear.x = 1
-        print(f"moving straight: {msg.linear.x},{msg.linear.y} [{args['x']}, {args['y']}]")
         pub.publish(msg)
         rate.sleep()
+
+    print("First side done")
+    args["done"] = False
+    args["xo"], args["yo"] = args["x"], args["y"]
+    rotate(pub, 120, args)
+    print("finished rotating")
+
+    print(f"{rospy.is_shutdown()}")
 
     # send orders
     while not rospy.is_shutdown():
 
         # movement is done
         if args["done"]:
-            print("second side done")
-            args["done"] = False
-            args["xo"], args["yo"] = args["x"], args["y"]
-
+            print("second move is done also")
             break
 
-        msg.linear.x = cos(120*pi/180)
-        msg.linear.y = sin(120*pi/180)
-        print(f"moving tilted 1: {msg.linear.x},{msg.linear.y} [{args['x']}, {args['y']}]")
-        #msg.angular.z = 120*pi/180
-        #msg.linear.x = 1
+        msg.linear.x = 1
         pub.publish(msg)
         rate.sleep()
     
+    print("Second side done")
+    args["done"] = False
+    args["xo"], args["yo"] = args["x"], args["y"]
+    rotate(pub, 120, args)
+    print("finished rotating")
+
     # send orders
     while not rospy.is_shutdown():
 
         # movement is done
         if args["done"]:
-            print("Third side done")
-            args["done"] = False
-            args["xo"], args["yo"] = args["x"], args["y"]
-
             break
 
-        msg.linear.x = cos(120*pi/180)
-        msg.linear.y = -sin(120*pi/180)
-        print(f"moving tilted 2: {msg.linear.x},{msg.linear.y} [{args['x']}, {args['y']}]")
+        msg.linear.x = 1
         # keep moving straight
-        #msg.linear.x = 1
-        #msg.linear.y = 0
-        #msg.angular.z = 120*pi/180
         pub.publish(msg)
         rate.sleep()
 
@@ -130,8 +161,6 @@ def move_line():
         msg.linear.x = 1
         pub.publish(msg)
         rate.sleep()
-
- 
 
 def move_square():
     
