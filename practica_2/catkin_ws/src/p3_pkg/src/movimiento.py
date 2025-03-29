@@ -9,6 +9,7 @@ from math import sin, cos, pi, sqrt
 def process_new_position(data, args):
 
     if( args["is_rotating"] ):
+        rospy.sleep(.2)
         return
 
     # normal update
@@ -17,16 +18,15 @@ def process_new_position(data, args):
         args["x"] = data.position[0]
         args["y"] = data.position[1]
     
-
-        #args["done"] = sqrt( abs(args["x"]-args["xo"])**2 + abs(args["y"]-args["yo"])**2 ) >= args["distance"]
-        
         distance = sqrt( abs(args["x"]-args["xo"])**2 + abs(args["y"]-args["yo"])**2 )
-        args["done"] = distance >= args["distance"]
-
+        args["done"] = (distance >= args["distance"])
+        
+        '''
         if(args["done"]):
             print(f"it was me: {args['x']},{args['y']} -- ({args['done']})")
             print(f"--it was me: {args['xo']},{args['yo']} -- ({args['done']})")
             print(f"--distance: {distance}")
+        '''
 
         #print(f"new pos recorded: {args['x']},{args['y']} -- ({args['done']})")
 
@@ -45,7 +45,7 @@ def rotate(pub, degrees, callback_args):
 
     callback_args["is_rotating"] = True
 
-    angular_speed = .5 # rad/s
+    angular_speed = .7 # rad/s
     wait_time = (degrees*pi/180) / angular_speed
 
     print(f"wait time: {wait_time}")
