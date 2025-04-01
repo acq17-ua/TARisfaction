@@ -2,6 +2,7 @@
 
 import rospy
 import sys
+from bondpy import bondpy
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Twist
 from math import sin, cos, pi, sqrt
@@ -76,12 +77,19 @@ def prepare_ros(callback_args):
     node = rospy.init_node("move_generator", anonymous=True)
     rate = rospy.Rate(.7)
 
-    return pub, sub, node, rate
+    bond = bondpy.Bond("bond_topic", "1")
+    bond.start()
+
+    if not bond.wait_until_formed(rospy.Duration(5.0)):
+        print("Couldnt connect to pair")
+        quit()
+
+    return pub, sub, node, rate, bond
 
 def move_triangle():
-    
+   
     args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":3, "is_rotating":False }
-    pub, sub, node, rate = prepare_ros(args)
+    pub, sub, node, rate, bond = prepare_ros(args)
     msg = Twist()
 
     # wait for a first position
@@ -137,12 +145,14 @@ def move_triangle():
         pub.publish(msg)
         rate.sleep()
 
+    bond.break_bond()
+
     return
 
-def move_line():
+def move_line(pub, sub, node, rate):
 
     args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":2 }
-    pub, sub, node, rate = prepare_ros(args)
+    pub, sub, node, rate, bond = prepare_ros(args)
     msg = Twist()
 
     # wait for a first position
@@ -162,14 +172,22 @@ def move_line():
         pub.publish(msg)
         rate.sleep()
 
-def move_square():
+def move_square(pub, sub, node, rate):
     
-    pub, node, rate = prepare_ros()
+    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":2 }
+    pub, sub, node, rate, bond = prepare_ros(args)
+
+    bond.break_bond()
+
     return
 
-def move_infinity():
+def move_infinity(pub, sub, node, rate):
     
-    pub, node, rate = prepare_ros()
+    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":2 }
+    pub, sub, node, rate, bond = prepare_ros(args)
+
+    bond.break_bond()
+    
     return
 
 if __name__=="__main__":
