@@ -9,8 +9,8 @@ from math import sin, cos, pi, sqrt
 
 def process_new_position(data, args):
 
-    if( args["is_rotating"] ):
-        rospy.sleep(.2)
+    if( args["is_rotating"] or args["done"] ):
+        rospy.sleep(.1)
         return
 
     # normal update
@@ -21,24 +21,13 @@ def process_new_position(data, args):
     
         distance = sqrt( abs(args["x"]-args["xo"])**2 + abs(args["y"]-args["yo"])**2 )
         args["done"] = (distance >= args["distance"])
+        print(f"moved {distance} out of {args['distance']}, (done={args['done']})")
         
-        '''
-        if(args["done"]):
-            print(f"it was me: {args['x']},{args['y']} -- ({args['done']})")
-            print(f"--it was me: {args['xo']},{args['yo']} -- ({args['done']})")
-            print(f"--distance: {distance}")
-        '''
-
-        #print(f"new pos recorded: {args['x']},{args['y']} -- ({args['done']})")
-
     # first position recorded (calculate end coordinates)
     else:
 
-        #args["x"] = sin(args["angle"]*pi/180) 
-        #args["y"] = cos(args["angle"]*pi/180)
-            
-        args["xo"] = data.position[0]
-        args["yo"] = data.position[1]
+        args["x"] = args["xo"] = data.position[0]
+        args["y"] = args["yo"] = data.position[1]
 
         print(f"first pos recorded: {args['xo']},{args['yo']}")
 
@@ -55,20 +44,35 @@ def rotate(pub, degrees, callback_args):
     rotation.angular.z = angular_speed
     
     start = rospy.get_time()
-    
 
     while (start + wait_time) > rospy.get_time():
         pub.publish(rotation)
    
-    print(f"start: {start} wait_time: {wait_time} now: {rospy.get_time()}")
+    #print(f"start: {start} wait_time: {wait_time} now: {rospy.get_time()}")
     # finish rotation
     rotation.angular.z = 0
     pub.publish(rotation)
 
     # wait for robot to stabilize
-    rospy.sleep(.3)
+    rospy.sleep(.7)
 
     callback_args["is_rotating"] = False
+
+def advance(pub, args, msg, rate):
+
+    while not rospy.is_shutdown():
+
+        # movement is done
+        if args["done"]:
+
+            msg.linear.x = 0
+            pub.publish(msg)
+            rate.sleep()
+            return
+
+        msg.linear.x = 1
+        pub.publish(msg)
+        rate.sleep()
 
 def prepare_ros(callback_args):
 
@@ -81,14 +85,14 @@ def prepare_ros(callback_args):
     bond.start()
 
     if not bond.wait_until_formed(rospy.Duration(5.0)):
-        print("Couldnt connect to pair")
+        print("Couldnt connect to tracker pair (run guy_who_tracks.py)")
         quit()
 
     return pub, sub, node, rate, bond
 
 def move_triangle():
    
-    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":3, "is_rotating":False }
+    args = { "xo":None, "yo":None, "x":None, "y":None, "done":True, "distance":3, "is_rotating":False }
     pub, sub, node, rate, bond = prepare_ros(args)
     msg = Twist()
 
@@ -96,62 +100,37 @@ def move_triangle():
     while ( not rospy.is_shutdown() ) and args["xo"] is None:
         rate.sleep()
 
-    # send orders
-    while not rospy.is_shutdown():
+    # first side
 
-        # movement is done
-        if args["done"]:
-            break
+    advance(pub, args, msg, rate)
 
-        msg.linear.x = 1
-        pub.publish(msg)
-        rate.sleep()
-
-    print("First side done")
     args["done"] = False
     args["xo"], args["yo"] = args["x"], args["y"]
+
     rotate(pub, 120, args)
-    print("finished rotating")
 
-    print(f"{rospy.is_shutdown()}")
+    # second side
 
-    # send orders
-    while not rospy.is_shutdown():
+    advance(pub, args, msg, rate)
 
-        # movement is done
-        if args["done"]:
-            print("second move is done also")
-            break
-
-        msg.linear.x = 1
-        pub.publish(msg)
-        rate.sleep()
-    
-    print("Second side done")
     args["done"] = False
     args["xo"], args["yo"] = args["x"], args["y"]
+
     rotate(pub, 120, args)
-    print("finished rotating")
 
-    # send orders
-    while not rospy.is_shutdown():
+    # third side
 
-        # movement is done
-        if args["done"]:
-            break
+    advance(pub, args, msg, rate)
 
-        msg.linear.x = 1
-        # keep moving straight
-        pub.publish(msg)
-        rate.sleep()
+    rotate(pub, 120, args)
 
     bond.break_bond()
 
     return
 
-def move_line(pub, sub, node, rate):
+def move_line():
 
-    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":2 }
+    args = { "xo":None, "yo":None, "x":None, "y":None, "done":True, "distance":2 }
     pub, sub, node, rate, bond = prepare_ros(args)
     msg = Twist()
 
@@ -159,23 +138,54 @@ def move_line(pub, sub, node, rate):
     while ( not rospy.is_shutdown() ) and args["xo"] is None:
         rate.sleep()
 
-    # send orders
-    while not rospy.is_shutdown():
+    advance(pub, args, msg, rate)
 
-        # movement is done
-        if args["done"]:
-            print("We moved 2 m in a straight line")
-            return
+    bond.break_bond()
 
-        # keep moving straight
-        msg.linear.x = 1
-        pub.publish(msg)
+    return
+
+def move_square():
+    
+    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":2, "is_rotating":False }
+    pub, sub, node, rate, bond = prepare_ros(args)
+    msg = Twist()
+
+    # wait for a first position
+    while ( not rospy.is_shutdown() ) and args["xo"] is None:
         rate.sleep()
 
-def move_square(pub, sub, node, rate):
-    
-    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":2 }
-    pub, sub, node, rate, bond = prepare_ros(args)
+    print("bout to advance: side 1")
+    # first side
+    advance(pub, args, msg, rate)
+
+    args["done"] = False
+    args["xo"], args["yo"] = args["x"], args["y"]
+
+    rotate(pub, 90, args)
+
+    print("bout to advance: side 2")
+    # second side
+    advance(pub, args, msg, rate)
+
+    args["done"] = False
+    args["xo"], args["yo"] = args["x"], args["y"]
+
+    rotate(pub, 90, args)
+
+    print("bout to advance: side 3")
+    # third side
+    advance(pub, args, msg, rate)
+
+    args["done"] = False
+    args["xo"], args["yo"] = args["x"], args["y"]
+
+    rotate(pub, 90, args)
+
+    print("bout to advance: side 4")
+    # fourth side
+    advance(pub, args, msg, rate)
+
+    rotate(pub, 90, args)
 
     bond.break_bond()
 
@@ -183,7 +193,7 @@ def move_square(pub, sub, node, rate):
 
 def move_infinity(pub, sub, node, rate):
     
-    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":2 }
+    args = { "xo":None, "yo":None, "x":None, "y":None, "done":True, "distance":2 }
     pub, sub, node, rate, bond = prepare_ros(args)
 
     bond.break_bond()
