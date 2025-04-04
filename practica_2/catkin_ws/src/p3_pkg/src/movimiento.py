@@ -3,81 +3,125 @@
 import rospy
 import sys
 from bondpy import bondpy
-from sensor_msgs.msg import JointState
+#from sensor_msgs.msg import JointState
+from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from math import sin, cos, pi, sqrt
+from tf.transformations import euler_from_quaternion
 
 def process_new_position(data, args):
 
-    if( args["is_rotating"] or args["done"] ):
+    if args["done"]:
         rospy.sleep(.1)
         return
 
-    # normal update
-    if( args["xo"] is not None ):
-        
-        args["x"] = data.position[0]
-        args["y"] = data.position[1]
+    #print(f"is_rotating: {args['is_rotating']}")
     
+    # rotation update
+    if args["is_rotating"]:
+
+        #print("we rotating")
+
+        # rotation update
+        if args["orientation_o"] is not None:
+            #print("normal update")
+
+            _,_,args['orientation'] = euler_from_quaternion([   data.pose.pose.orientation.x,
+                                                                data.pose.pose.orientation.y,
+                                                                data.pose.pose.orientation.z,
+                                                                data.pose.pose.orientation.w
+                                                                ])
+
+            angle_rotated = abs(abs(args["orientation"])-abs(args["orientation_o"]))
+            #args["done"] = angle_rotated >= args["angle"]
+
+            print(f"orientation_o={args['orientation_o']} - orientation={args['orientation']} = {angle_rotated} (>= {args['angle']}: {args['done']})")
+
+            #print(args["angle"])
+            #print(f"new orientation: {args['orientation']} -- ({args['done']})")
+
+        # we just started rotating
+        else:
+            print("first rotation update")
+
+            # get yaw (to radians)
+            _,_,args['orientation_o'] = euler_from_quaternion([ data.pose.pose.orientation.x,
+                                                                data.pose.pose.orientation.y,
+                                                                data.pose.pose.orientation.z,
+                                                                data.pose.pose.orientation.w
+                                                                ])
+            
+            #args["orientation_o"] = float(data.pose.pose.orientation.z)
+            #args["orientation"] = float(data.pose.pose.orientation.z)
+            print(f"initial orientation: {args['orientation_o']}")
+            print(f"{args['orientation_o']} {args['orientation']}")
+            quit()
+            
+        return
+
+    # movement update
+    if( args["xo"] is not None ):
+    
+        args["x"] = data.pose.pose.position.x
+        args["y"] = data.pose.pose.position.y
+
         distance = sqrt( abs(args["x"]-args["xo"])**2 + abs(args["y"]-args["yo"])**2 )
         args["done"] = (distance >= args["distance"])
-        print(f"moved {distance} out of {args['distance']}, (done={args['done']})")
         
-    # first position recorded (calculate end coordinates)
+    # first position recorded
     else:
+        args["x"] = args["xo"] = data.pose.pose.position.x
+        args["y"] = args["yo"] = data.pose.pose.position.y
 
-        args["x"] = args["xo"] = data.position[0]
-        args["y"] = args["yo"] = data.position[1]
+def rotate(pub, args, rate):
 
-        print(f"first pos recorded: {args['xo']},{args['yo']}")
+    print("begun rotating")
 
-def rotate(pub, degrees, callback_args):
+    args["is_rotating"] = True
 
-    callback_args["is_rotating"] = True
-
-    angular_speed = .7 # rad/s
-    wait_time = (degrees*pi/180) / angular_speed
-
-    print(f"wait time: {wait_time}")
+    angular_speed = .5 # rad/s
 
     rotation = Twist()
     rotation.angular.z = angular_speed
     
-    start = rospy.get_time()
-
-    while (start + wait_time) > rospy.get_time():
+    while not args["done"]:
         pub.publish(rotation)
-   
-    #print(f"start: {start} wait_time: {wait_time} now: {rospy.get_time()}")
+    
     # finish rotation
     rotation.angular.z = 0
     pub.publish(rotation)
 
+    print("finished rotating")
+
     # wait for robot to stabilize
-    rospy.sleep(.7)
+    rospy.sleep(1)
 
-    callback_args["is_rotating"] = False
+    args["is_rotating"] = False
+    args["done"] = False
+    args["orientation_o"] = None
+    args["orientation"] = None
 
-def advance(pub, args, msg, rate):
+def advance(pub, args, rate):
 
-    while not rospy.is_shutdown():
+    print("begun move")
+    move = Twist()
+    move.linear.x = 1
 
-        # movement is done
-        if args["done"]:
+    while not args["done"]:
+        pub.publish(move)
 
-            msg.linear.x = 0
-            pub.publish(msg)
-            rate.sleep()
-            return
+    move.linear.x = 0
+    pub.publish(move)
 
-        msg.linear.x = 1
-        pub.publish(msg)
-        rate.sleep()
+    rospy.sleep(1)
+
+    args["done"] = False
+    args["xo"], args["yo"] = args["x"], args["y"]
 
 def prepare_ros(callback_args):
 
     pub = rospy.Publisher("/cmd_vel_mux/input/teleop", Twist, queue_size=10)
-    sub = rospy.Subscriber("/joint_states", JointState, process_new_position, callback_args=callback_args)
+    sub = rospy.Subscriber("/odom", Odometry, process_new_position, callback_args=callback_args)
     node = rospy.init_node("move_generator", anonymous=True)
     rate = rospy.Rate(.7)
 
@@ -103,25 +147,16 @@ def move_triangle():
     # first side
 
     advance(pub, args, msg, rate)
-
-    args["done"] = False
-    args["xo"], args["yo"] = args["x"], args["y"]
-
     rotate(pub, 120, args)
 
     # second side
 
     advance(pub, args, msg, rate)
-
-    args["done"] = False
-    args["xo"], args["yo"] = args["x"], args["y"]
-
     rotate(pub, 120, args)
 
     # third side
 
     advance(pub, args, msg, rate)
-
     rotate(pub, 120, args)
 
     bond.break_bond()
@@ -146,46 +181,36 @@ def move_line():
 
 def move_square():
     
-    args = { "xo":None, "yo":None, "x":None, "y":None, "done":False, "distance":2, "is_rotating":False }
+    args = {    "xo":None, "yo":None, 
+                "x":None, "y":None, 
+                "done":False, 
+                "distance":2, 
+                "is_rotating":False, 
+                "orientation_o":None, "orientation":None,
+                "angle":(pi/2) }
+
+
     pub, sub, node, rate, bond = prepare_ros(args)
-    msg = Twist()
 
     # wait for a first position
     while ( not rospy.is_shutdown() ) and args["xo"] is None:
         rate.sleep()
 
-    print("bout to advance: side 1")
-    # first side
-    advance(pub, args, msg, rate)
+    print("SIDE 1")
+    advance(pub, args, rate)
+    rotate(pub, args, rate)
 
-    args["done"] = False
-    args["xo"], args["yo"] = args["x"], args["y"]
+    print("SIDE 2")
+    advance(pub, args, rate)
+    rotate(pub, args, rate)
 
-    rotate(pub, 90, args)
+    print("SIDE 3")
+    advance(pub, args, rate)
+    rotate(pub, args, rate)
 
-    print("bout to advance: side 2")
-    # second side
-    advance(pub, args, msg, rate)
-
-    args["done"] = False
-    args["xo"], args["yo"] = args["x"], args["y"]
-
-    rotate(pub, 90, args)
-
-    print("bout to advance: side 3")
-    # third side
-    advance(pub, args, msg, rate)
-
-    args["done"] = False
-    args["xo"], args["yo"] = args["x"], args["y"]
-
-    rotate(pub, 90, args)
-
-    print("bout to advance: side 4")
-    # fourth side
-    advance(pub, args, msg, rate)
-
-    rotate(pub, 90, args)
+    print("SIDE 4")
+    advance(pub, args, rate)
+    rotate(pub, args, rate)
 
     bond.break_bond()
 

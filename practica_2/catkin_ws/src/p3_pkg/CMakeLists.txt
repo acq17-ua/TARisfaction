@@ -10,7 +10,8 @@ project(p3_pkg)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   rospy
-  sensor_msgs
+  #sensor_msgs
+  nav_msgs
   std_msgs
 )
 
@@ -107,7 +108,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES p3_pkg
-  CATKIN_DEPENDS geometry_msgs rospy sensor_msgs std_msgs
+  CATKIN_DEPENDS geometry_msgs rospy nav_msgs std_msgs
 #  DEPENDS system_lib
   DEPENDS message_runtime
 )
